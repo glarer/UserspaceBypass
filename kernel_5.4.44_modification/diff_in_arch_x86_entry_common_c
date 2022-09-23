@@ -1,0 +1,16 @@
+278,283d277
+< 
+< 
+< void(*zz_var)(struct pt_regs *, unsigned long ts);
+< EXPORT_SYMBOL(zz_var);
+< 
+< 
+287c281
+< 	unsigned long ts = ktime_get_boottime_ns();
+---
+> 
+305,306c299
+< 	if(zz_var != NULL)
+< 		(*zz_var)(regs, ts);
+---
+> 
