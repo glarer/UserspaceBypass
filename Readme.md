@@ -1,5 +1,6 @@
 ## Getting Started Instructions
 License:GPL
+
 Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
 ----
@@ -18,7 +19,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 	* Server machine: Intel Xeon Platinum 8175\*2, 192G memory, Samsung 980 pro NVMe SSD, and Mellanox Connectx-3 NIC.
 	* Client machine: Intel Xeon Platinum 8260, 128G memory, and Mellanox Connectx-5 NIC.
 		* *This is the hardware platform we use, not mandatory.*
-3. **Change the kernel version to 5.4.44 and modify it. (Or just replace this three files from the /source_codes/kernel_modify)**
+3. **Change the kernel version to 5.4.44 and modify it. (Or just replace these three files from `/source_codes/kernel_modify`)**
 	1. [Kernel 5.4.44](https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.4.44.tar.gz) can be downloaded here.
 	2. Modify codes in "**linux-5.4.44/arch/x86/entry/common.c**" like this:
 	```c
@@ -136,7 +137,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 1. Run the program to be boosted.
 2. Find the potentially syscall address of the program: 
    * Use `strace` to find the addresses of syscalls. e.g.:
-     * `write` of redis: `sudo strace -ip $(pidof redis-server)`. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server.)
+     * `write` of redis: `sudo strace -ip <PID_OF_REDIS_SERVER>`. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server.)
 3. Modify codes in daemon program: `source_codes/zz_daemon/main.c`
     ```c
 	// add the syscall address in targets[]
@@ -187,6 +188,26 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
 ----
 ## I/O Micro-benchmark test:
+1. Two sparated experiment: ssd disk read and memory read.
+2. For **ssd disk** read test:
+   1. Codes lies in `source_codes/io_file`. We have modified the `syscall_read` codes to have 11 times read function test. The first time read for boost period, and the 10 times followed for evaluation.
+   2. Firstly, make a big file in toRead folder named test.file. We use `dd` to build a 16Gbytes file, e.g., `dd if=/dev/zero of=test.file bs=1M count=16384`
+   3. Modify codes in `io_file/syscall_read.c`: 
+		* FILE_POS -> 1
+		* WITH_SUM corresponding to the Table 3 in the paper.
+   4. `make`
+   5. `./syscall_read <IO_SIZE>`, like `./syscall_read 1024` for 1024 bytes every read. `strace` to get the syscall address, now we support `pread64()` syscall.
+   6. Modify `zz_daemon/main.c` and add syscall address in arrary `targets[]`. Re-compile the daemon program.
+   7. Insert the kernel module, and run daemon program.
+   8. Run the `syscall_read` program. The boost period will happen in the first read function of the program(we repeat read function for 11 times.), and the 10 times followed will enjoy the boosting.
+3. For **memory** read test:
+   1. The only different is to build file in `/dev/shm/` folder and modify `FILE_POS -> 0` in `io_file/syscall_read.c`.
+4. For **io_uring** test:
+   1. We use **fio 3.16** to test io_uring. `sudo apt install fio`
+   2. `sudo fio --name=/dev/shm/test.file --bs=<IO_SIZE> --ioengine=io_uring --iodepth=<IO_DEPTH> --iodepth_batch_submit=<IO_DEPTH> --iodepth_batch_complete=<IO_DEPTH> --iodepth_batch_complete_min=<IO_DEPTH> --rw=read --direct=0 --size=<FILE_SIZE> --numjobs=1 --sqthread_poll=1 --runtime=240 --group_report`
+   3. To be fair, we set different batch sizes with different file sizes:(IO size - file size) 64-256MiB, 256-1GiB, 1024-8GiB, 4096-16GiB.
+   4. We also test different io_depth influence on memory read. The range is 2^(1 - 10), which corresponding to Fig 6 of our paper.
 
+---
 ## Tips
 -----
