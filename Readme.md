@@ -206,8 +206,20 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
    1. We use **fio 3.16** to test io_uring. `sudo apt install fio`
    2. `sudo fio --name=/dev/shm/test.file --bs=<IO_SIZE> --ioengine=io_uring --iodepth=<IO_DEPTH> --iodepth_batch_submit=<IO_DEPTH> --iodepth_batch_complete=<IO_DEPTH> --iodepth_batch_complete_min=<IO_DEPTH> --rw=read --direct=0 --size=<FILE_SIZE> --numjobs=1 --sqthread_poll=1 --runtime=240 --group_report`
    3. To be fair, we set different batch sizes with different file sizes:(IO size - file size) 64-256MiB, 256-1GiB, 1024-8GiB, 4096-16GiB.
-   4. We also test different io_depth influence on memory read. The range is 2^(1 - 10), which corresponding to Fig 6 of our paper.
-
+   4. We also test different io_depth influence on memory read. The range is 2^(1 - 10), which corresponding to Fig 6 in paper.
 ---
+## Raw socket test:
+
+#### Raw socket:
+1. Two machine(client and server) are needed. Codes in `source_codes/socket/udp` folder.
+2. Client serves as the sender. Change the 'xxx' of `theirAddr.sin_addr.s_addr = inet_addr("xxx.xxx.xxx.xxx");` in `socket/send_udp.c` to one of the server NIC address. Use `gcc send_udp.c -o send_udp -lpthread` to compile the sender. Just use `./send_udp` to run.
+3. Server needs to modify 'xxx' of `const char *opt = "xxx";` in `source_codes/socket/udp/raw_socket_udp.c` as the real name of the chosen NIC. `make` to compile the server. Use `sudo ./sniff <0_OR_1>` to run. 0 or 1 means whether to do calculation of the incoming packages.
+4. Same as previous, use `strace` to get syscall address after running these two program. Here we support syscall `recvfrom()`. Then add its address in daemon program.
+5. Insert the kernel module, recompile the daemon program and run.
+6. Run the sender and receiver program, waiting for boost complete.
+7. Here we also modify the receiver to have 11 times socket read test. The first one is used for boosting period, and the 10 times followed for evaluation.
+----
 ## Tips
 -----
+1. In most situations, turning on **KPTI** will have better performance gain. Newer processors may not be affected by meltdown, so they are not affected by KPTI.
+2. How to turn off KPTI: modify `GRUB_CMDLINE_LINUX_DEFAULT=""` line in `/etc/default/grub`, add `nopti` option inside the double quotation marks. Then update grub and reboot. 
