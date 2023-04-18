@@ -14,7 +14,7 @@ char *sys_path = "/sys/kernel/zz_sys/etx_value";
 // const unsigned long targets[] = {0x007ffff7f9d6ca}; 
 
 // file io
-const unsigned long targets[] = {0x07ffff7ec716a};
+// const unsigned long targets[] = {0x07ffff7ec716a};
 
 // redis 
 // const unsigned long targets[] = {0x07ffff7e4832f};
