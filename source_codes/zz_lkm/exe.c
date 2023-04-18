@@ -57,13 +57,6 @@ void exe_exit(void){
     return;
 }
 
-unsigned long rdtscp(void){
-	unsigned long rax,rdx;
-	asm volatile ( "rdtscp\n" : "=a" (rax), "=d" (rdx)::"%rcx","memory");
-	return (rdx << 32) | rax;
-}
-
-
 /*args is used to pass arguments to code block
   For input, the first arg is fs, and second being gs.
   For output, the first is return_code, or the address of indirect jump.
@@ -114,11 +107,11 @@ void exe_on_call(struct pt_regs* regs){
             exe->fail_cnt++;
         }
         
-        /*   for remind in 'dmesg'
+        /*   for remind in 'dmesg' */
         if((exe->success_cnt+exe->fail_cnt) % 500000 == 1){
             printk(KERN_INFO "%d %lx %ld calls combined, %ld calls failed\n",exe->pid, exe->RIP, exe->success_cnt,exe->fail_cnt);
         }
-        */
+        
     }
     
 	
