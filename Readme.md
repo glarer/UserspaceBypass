@@ -1,4 +1,7 @@
 ## Getting Started Instructions
+License:GPL
+Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
+
 ----
 #### Before Start:
 1. **Software configuration**
@@ -10,8 +13,7 @@
 	
 	* Redis 6.2.6
 	* Nginx 1.20.0
-  
-	~~sudo apt-get install git fakeroot build-essential ncurses-dev xz-utils libssl-dev bc flex libelf-dev bison~~
+	
 2. **Hardware configuration**
 	* Server machine: Intel Xeon Platinum 8175\*2, 192G memory, Samsung 980 pro NVMe SSD, and Mellanox Connectx-3 NIC.
 	* Client machine: Intel Xeon Platinum 8260, 128G memory, and Mellanox Connectx-5 NIC.
@@ -188,5 +190,3 @@
 
 ## Tips
 -----
-1.  x
-2. xx
