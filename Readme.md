@@ -8,7 +8,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 ----
 #### Before Start:
 1. **Software configuration**
-	* Ubuntu 20.04 with Kernel version 5.4.44
+	* Ubuntu [20.04.2](https://old-releases.ubuntu.com/releases/20.04.2/ubuntu-20.04.2-desktop-amd64.iso) with Kernel version 5.4.44
 	* Python 3.8 & module: [miasm v0.1.3](https://github.com/cea-sec/miasm/releases/tag/v0.1.3)
 	* gcc 9.4.0
 	* (optional) Qemu 4.2.1(Debian 1:4.2-3ubuntu6.24) with KVM modules
