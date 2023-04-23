@@ -163,7 +163,9 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 7. It will be printed in `dmesg` after every 500k syscalls are captured, check `dmesg` to find whether syscall has been boosted.
 8. Finally, uninstall the module using `sudo rmmod zz_lkm`.
 * Every program needs to be boosted individually: re-insert the kernel module and re-run the daemon program.
-  
+
+To simplify the artifact, we write several scripts to reduce the repetitive workload. Please see `source/scripts/` folder, the usage of them are specified inside the scripts.
+
 ---------
 ## I/O Micro-benchmark test (Paper Section 6.1):
 1. Two sparated experiment: ssd disk read and memory read.
