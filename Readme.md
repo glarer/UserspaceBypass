@@ -16,13 +16,15 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
       4. A program to be boosted: here we use memory io-microbenchmark, which has been compiled in `apps/io_file/`, named `syscall_read`. In this test, we will test the IOPS of memory read in 1024 bytes batch.
       5. A big file named `test.file` in `/dev/shm`(memory). Here we use `dd` to do it: come to `/dev/shm` and `sudo dd if=/dev/zero of=test.file bs=1M count=2048`
    2. Come to `apps/io_file/` and run `sudo ./syscall_read 1024` to get the IOPS of memory read without acceleration. 
-   3. Multi-terminal needed: 
+   3. Two terminal needed (`tmux` recommended): 
       1. One come to `ub/` and run `./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
       2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
-      3. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
-   ![](success.png)
-   4. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
-   5. In our setting, all the syscall's address can be boosted are shown in [Tips](#tips).
+   4. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
+   ![](boosting.png)
+   5. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
+	![](success.png)
+	Here we can find the syscall address `0x7ffff7ed116a` has been boosted for 89,499,986 times.
+   6. In our setting, all the syscall's address can be boosted are shown in [Tips](#tips).
 
 ---
 ## Detailed Instructions -> Start from the very beginning.
@@ -158,7 +160,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 3. Find the potentially syscall address of the program: (Or just use the pre-hardcode address in `source_codes/ub/zz_daemon/main.c`, if it is changed, please add the new address in `source_codes/ub/zz_daemon/main.c`)
 	* <span id='strace'>***How to find syscall address:*** </span>
    * Use `strace` to find the addresses of syscalls. e.g.:
-     * `write` of redis: `sudo strace -ip xxx`, xxx is the pid of redis-server. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server.)
+     * `write` of redis: `sudo strace -ip xxx`, xxx is the pid of redis-server. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server: one terminal run `./redis-server`, another terminal run `./redis-benchmark`.)
      * Then find the address of `write` and do step 4.
 4. Modify codes in daemon program: `source_codes/ub/zz_daemon/main.c`
     ```c
@@ -171,13 +173,13 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 7. Run the program to be boosted and waiting for boost complete.
 8. It will be printed in `dmesg` after every 500k syscalls are captured, check `dmesg` to find whether syscall has been boosted.
 9.  Finally, uninstall the module using `sudo rmmod zz_lkm`.
-* Every program needs to be boosted individually: re-insert the kernel module and re-run the daemon program.
+* Every program needs to be boosted individually: re-insert the kernel module and re-run the daemon program. We give one script to run ub in `source_codes/ub/` named `start.sh`. If the syscall address is right, kernel module and daemon program have been compiled, just run `sudo ./start.sh` to start ub.
 
-To simplify the artifact, we write several scripts to reduce the repetitive workload of client test. Please see `source/scripts/` folder, the usage of them are specified inside the scripts.
+To simplify the artifact, we also write several scripts to reduce the repetitive workload of client test. Please see `source/scripts/` folder, the usage of them are specified inside the scripts.
 
 ### Tips from the beginning:
-All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump.
- But if it cannot boost successful, please follow the re-do the experiment from the **(Optional: has been Pre-hardcode)** step **OR** follow the instruction on [how to find syscall address](#strace).
+All the options with the tag '**(Optional: has been Pre-hardcode)**' can be bypassed.
+ But if it cannot boost successful, please re-do the experiment from the **(Optional: has been Pre-hardcode)** step **OR** follow the instruction on [how to find syscall address](#strace).
 
 
 ---------
@@ -185,15 +187,15 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump
 1. Two sparated experiment: ssd disk read and memory read.
 2. For **ssd disk** read test:
    1. Codes lie in `source_codes/apps/io_file`. We have modified the `syscall_read` codes to have 11 times read function tests. The first time read test for the boost period, and the 10 times followed for evaluation.
-   2. Firstly, make a big file in toRead folder named test.file. We use `dd` to build a 16Gbytes file, e.g., `dd if=/dev/zero of=test.file bs=1M count=2048`
+   2. Firstly, make a big file in toRead folder named test.file. We use `dd` to build a 2 Gbytes file, e.g., `dd if=/dev/zero of=test.file bs=1M count=2048`
    3. Modify codes in `io_file/syscall_read.c`: 
         * Make sure the `FILE_POS` is `1`
         * `WITH_SUM` parameter is corresponding to Table 3 in the paper.
    4. `make`
-   5. `sudo ./syscall_read <IO_SIZE>`, like `sudo ./syscall_read 1024` for 1024 bytes every read. `strace` to get the syscall address, now we support `pread64()` syscall.
+   5. **(Optional: has been Pre-hardcode)** `sudo ./syscall_read <IO_SIZE>`, like `sudo ./syscall_read 1024` for 1024 bytes every read. `strace` to get the syscall address, now we support `pread64()` syscall.
    6. **(Optional: has been Pre-hardcode)** Modify `ub/zz_daemon/main.c` and add syscall address in array `targets[]`. Re-compile the daemon program.
    7. Insert the kernel module, and run the daemon program.
-   8. Run the `syscall_read` program. The boost period will happen in the first read function of the program(we repeat the read function 11 times.), and the 10 times followed will enjoy the boosting.
+   8. Run the `syscall_read` program `sudo ./syscall_read <IO_SIZE>`. The boost period will happen in the first read function of the program(we repeat the read function 11 times.), and the 10 times followed will enjoy the boosting.
 3. For **memory** read test:
    1. The only difference is to build a file in `/dev/shm/` folder and modify `FILE_POS -> 0` in `apps/io_file/syscall_read.c`.
 4. For **io_uring** test:
@@ -223,7 +225,7 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump
 1. Nginx version: 1.20.0.
 2. [Install tutorial](http://nginx.org/en/docs/configure.html). `libpcre-dev` is needed. Configure options we used: `sudo ./configure --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/run/nginx.pid --lock-path=/var/lock/nginx.lock --modules-path=/usr/lib/nginx/module --with-http_gunzip_module --with-http_gzip_static_module`
 3. `make && make install`
-4. The nginx configuration files are in `source_codes/apps/nginx`, move them to `/etc/` folder. The website files need to be put in `/var/www/html` and they can be accessed from the `8088` port. Using `dd` to make files of a specific size.
+4. The nginx configuration files are in `source_codes/apps/nginx`, move them to `/etc/` folder `mv source_codes/apps/nginx /etc/`. The website files need to be put in `/var/www/html` and they can be accessed from the `8088` port. Using `dd` to make files of a specific size. i.e., `sudo dd if=/dev/zero of=4k.html bs=4K count=1`
 5. Run `sudo nignx` to start nginx daemon program. Test whether it is working by `curl` or `wget`, e.g., `curl http://localhost:8088/4k.html`.
 6. Do the benchmark by using [wrk](https://github.com/wg/wrk) from another machine. `./wrk -t8 -c1024 -d12 <URL_&_FILES>`. Here `-t8 -c1024 -d12` represent 8 threads, 1024 connection, and 12 seconds respectively.
 7. **(Optional: has been Pre-hardcode)** `strace` the nginx-worker thread to find the syscall address. Now we support 5 syscalls acceleration: `openat, setsockopt, writev, sendfile, close`. Add addresses of these 5 syscalls in `source_codes/ub/zz_daemon/main.c`, and recompile the daemon program.
@@ -251,6 +253,7 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump
 6. Run the sender and receiver program again, waiting for the boost complete.
 7. Here we also modify the receiver to have an 11 times socket read test. The first one is used for boosting period, and the 10 times followed for evaluation.
 
+---
 
 ## <span id='tips'>Tips</span>
 
@@ -261,7 +264,7 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump
 
 Address are collected in our setting, please double check.
 
-If update `source_codes/ub/zz_daemon/main.c` is needed, please follow the [instruction on how to find syscall address](#strace).
+If addresses update is needed, please follow the [instruction on how to find syscall address](#strace).
 
 | **Application** | **Syscalls** | **Address** |
 | ----------- | ---------- | ---------- |
