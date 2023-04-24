@@ -1,7 +1,7 @@
 #include "common.h"
 
 
-#define FILE_POS 1 //0: memory 1: ssd
+#define FILE_POS 0 //0: memory 1: ssd
 #define WITH_SUM 0 
 
 #define SSD_O_DIRECT_SWITCH 0 // 0: off 1:on 
