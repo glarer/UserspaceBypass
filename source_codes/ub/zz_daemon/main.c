@@ -7,17 +7,11 @@
 #include "exe.h"
 
 char *sys_path = "/sys/kernel/zz_sys/etx_value";
-// nginx
-//const unsigned long targets[] = {0x7ffff7f97abb, 0x7ffff7ddc487, 0x7ffff7de874e,  0x7ffff7ddafae, 0x7ffff7f97437}; 
 
-// socket
-// const unsigned long targets[] = {0x007ffff7f9d6ca}; 
+const unsigned long targets[] = {0x7ffff7fa1abb, 0x7ffff7de6487, 0x7ffff7df274e,  0x7ffff7de5fae, 0x7ffff7fa1437,  0x007ffff7fa76ca, 0x07ffff7ed116a, 0x007ffff7e5232f};
 
-// file io
-// const unsigned long targets[] = {0x07ffff7ec716a};
-
-// redis 
-// const unsigned long targets[] = {0x07ffff7e4832f};
+unsigned long records[1024] = {};
+int cnts = 0;
 
 int compile_count = 0;
 
@@ -25,6 +19,15 @@ int in_targets(unsigned long ip, int pid){
 	for(int i =0;i< sizeof(targets)/sizeof(unsigned long);i++){
 		if(ip == targets[i]){
 			return 1; 
+		}
+	}
+	return 0;
+}
+
+int in_records(unsigned long ip, int pid){
+	for(int i=0; i<sizeof(records)/sizeof(unsigned long);i++){
+		if(ip == records[i]){
+			return 1;
 		}
 	}
 	return 0;
@@ -45,8 +48,8 @@ int cmd_history(char* cmd){
 
 void compile(int pid, void* entry){
     char cmd[1024];
-	// path to zz_disassem/disassem.py
-	sprintf(cmd, "cd ./%p/ && python3 ../zz_disassem/disassem.py %d %p", entry, pid, entry);
+    // path to zz_disassem/disassem.py
+    sprintf(cmd, "cd ./%p/ && python3 ../../zz_disassem/disassem.py %d %p", entry, pid, entry);
     system(cmd);
 }
 
@@ -105,8 +108,15 @@ void check(){
 
 	for(int i =0;i<len/sz;i++,exe++){
 		cmd[0] = 0;
-		if(!in_targets(exe->RIP, exe->pid))
+		if(!in_targets(exe->RIP, exe->pid)){
+			if(!in_records(exe->RIP, exe->pid)){
+				printf("#### warning: syscall address %p is not in the white-list, it will not be boosted ####\n", (void *)exe->RIP);
+				records[cnts] = (unsigned long)exe->RIP;
+				cnts ++;
+			}
 			continue;
+		}
+
 		if(exe->status_code == 0){
 			continue;
 		}

@@ -81,7 +81,6 @@ int main(int argc, char** argv){
     buffer_size = atoi(argv[1]);
     rand_lim_page = RAND_LIM_PAGE / buffer_size;
 
-    echo_common_parameters();
 
     printf("File POS: %s\n", Test_file);
     printf("O_Direct: %d\n", SSD_O_DIRECT_SWITCH);

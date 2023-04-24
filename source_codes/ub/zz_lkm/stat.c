@@ -5,8 +5,8 @@
 #include "exe.h"
 
 struct per_cpu_info* info;
-static const int syscall_short_th = 1400; // 1200; //800; //0.4us gap to be short syscall + 0.4 syscall entry&exit
-static const int hot_caller_th = 700; // 1000 short calls per mislestone to be hot
+static const int syscall_short_th = 800; // 1200; //800; //0.4us gap to be short syscall + 0.4 syscall entry&exit
+static const int hot_caller_th = 1500; // 1000 short calls per mislestone to be hot
 static const int milestone_cnt = 30000; // check if hot every 50,000 syscalls
 static const int milestone_duration_th = 1000000000; // check if milestone finished within the duration
 

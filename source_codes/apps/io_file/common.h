@@ -79,22 +79,6 @@ int buffer_size = 8;
 uint64_t rand_lim_page = 0;
 
 
-/*
-    Echo the common parameter
-*/
-
-static void echo_common_parameters(){
-    puts("==========Common===========");
-    printf("CPU NUM: %d\n", CPU_NUM);
-    printf("CPU FREQ: %lf HZ\n", CPU_HZ);
-    printf("BUFFER SIZE: 0x%x\n", buffer_size);
-    printf("TOTAL IO BLOCKS: 0x%x\n", Dot_Num);
-    printf("READ ORDER(0: seq 1: fix 2: rand: %d\n", READ_ORDER);
-    //printf("RAND_BASE: %lf G\n", (double)RAND_BASE*BUFFER_SIZE/1024.0/1024.0/1024.0);
-    printf("RAND RANGE: 0G - %ld G\n", RAND_LIM);
-    puts("");
-    puts("==========Specific================");
-}
 
 /*
     The summary

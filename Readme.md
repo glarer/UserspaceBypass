@@ -10,14 +10,15 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 **Start a small test here**
 **getting start from our virtual machine.**
    1. Our test needs:
-      1. A kernel module: has been compiled in `ub/zz_lkm/` folder, named `zz_lkm.ko`.
-      2. A daemon program: has been comiled in `ub/zz_daemon/` folder, named `zz_daemon`.
-      3. A program to be boosted: here we use memory io-microbenchmark, which has been compiled in `apps/io_file/`, named `syscall_read`. In this test, we will test the iops of memory read in 1024 bytes batch.
-      4. A big file named `test.file` in `/dev/shm`(memory). Here we use `dd` to do it: `dd if=/dev/zero of=test.file bs=1M count=2048`
-   2. Run `sudo ./syscall_read 1024` to get the iops of memory read without acceleration. (Around 1400k in this VM setting)
+      1. Stop the address randomization in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
+      2. A kernel module: has been compiled in `ub/zz_lkm/` folder, named `zz_lkm.ko`.
+      3. A daemon program: has been comiled in `ub/zz_daemon/` folder, named `zz_daemon`.
+      4. A program to be boosted: here we use memory io-microbenchmark, which has been compiled in `apps/io_file/`, named `syscall_read`. In this test, we will test the IOPS of memory read in 1024 bytes batch.
+      5. A big file named `test.file` in `/dev/shm`(memory). Here we use `dd` to do it: come to `/dev/shm` and `sudo dd if=/dev/zero of=test.file bs=1M count=2048`
+   2. Come to `apps/io_file/` and run `sudo ./syscall_read 1024` to get the IOPS of memory read without acceleration. 
    3. Multi-terminal needed: 
       1. One come to `ub/` and run `./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
-      2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. (Boosting to around 2700k in this VM setting)
+      2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
    4. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
 
 ---
@@ -149,21 +150,22 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
 
 #### Overall Usage:
-1. Run the program to be boosted.
-2. Find the potentially syscall address of the program: 
+1. Stop the address randomization in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
+2. Run the program to be boosted.
+3. Find the potentially syscall address of the program: 
    * Use `strace` to find the addresses of syscalls. e.g.:
      * `write` of redis: `sudo strace -ip xxx`, xxx is the pid of redis-server. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server.)
-3. Modify codes in daemon program: `source_codes/ub/zz_daemon/main.c`
+4. Modify codes in daemon program: `source_codes/ub/zz_daemon/main.c`
     ```c
 	// add the syscall address in targets[]
     // redis -> write
 	const unsigned long targets[] = {0x07ffff7e4832f};
     ```
-4. Compile the daemon program using `make`.
-5. Insert the kernel module in `ub/zz_lkm` folder: `sudo insmod zz_lkm.ko`  and run the daemon program `sudo ./zz_daemon` in zz_daemon folder.
-6. Run the program to be boosted and waiting for boost complete.
-7. It will be printed in `dmesg` after every 500k syscalls are captured, check `dmesg` to find whether syscall has been boosted.
-8. Finally, uninstall the module using `sudo rmmod zz_lkm`.
+5. Compile the daemon program using `make`.
+6. Insert the kernel module in `ub/zz_lkm` folder: `sudo insmod zz_lkm.ko`  and run the daemon program `sudo ./zz_daemon` in zz_daemon folder.
+7. Run the program to be boosted and waiting for boost complete.
+8. It will be printed in `dmesg` after every 500k syscalls are captured, check `dmesg` to find whether syscall has been boosted.
+9.  Finally, uninstall the module using `sudo rmmod zz_lkm`.
 * Every program needs to be boosted individually: re-insert the kernel module and re-run the daemon program.
 
 To simplify the artifact, we write several scripts to reduce the repetitive workload of client test. Please see `source/scripts/` folder, the usage of them are specified inside the scripts.
@@ -215,7 +217,7 @@ To simplify the artifact, we write several scripts to reduce the repetitive work
 4. The nginx configuration files are in `source_codes/apps/nginx`, move them to `/etc/` folder. The website files need to be put in `/var/www/html` and they can be accessed from the `8088` port. Using `dd` to make files of a specific size.
 5. Run `sudo nignx` to start nginx daemon program. Test whether it is working by `curl` or `wget`, e.g., `curl http://localhost:8088/4k.html`.
 6. Do the benchmark by using [wrk](https://github.com/wg/wrk) from another machine. `./wrk -t8 -c1024 -d12 <URL_&_FILES>`. Here `-t8 -c1024 -d12` represent 8 threads, 1024 connection, and 12 seconds respectively.
-7. `strace` to find the syscall address. Now we support 5 syscalls acceleration: `openat, setsockopt, writev, sendfile, close`. Add addresses of these 5 syscalls in `source_codes/ub/zz_daemon/main.c`, and recompile the daemon program.
+7. `strace` the nginx-worker thread to find the syscall address. Now we support 5 syscalls acceleration: `openat, setsockopt, writev, sendfile, close`. Add addresses of these 5 syscalls in `source_codes/ub/zz_daemon/main.c`, and recompile the daemon program.
 8. Insert the kernel module first, and then run the daemon program in root mode.
 9. Run wrk from another machine(the same machine is also ok) and wait for the boost complete. The boost period may cost more than 3 minutes depending on the RPS, so the first boost needs a big number of wrk -d parameter.
 10. After the acceleration is complete, stop wrk and continue to use `-d12` for testing.

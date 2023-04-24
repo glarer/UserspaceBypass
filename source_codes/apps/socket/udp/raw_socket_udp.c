@@ -50,10 +50,11 @@ void attach_cpu(int cpu){
 
 int sock_raw;
 int udp=0, total=0;
-int Batch = 35619357;
-// int Batch = 10000000;
-// int Batch2 = 4000000;
-int Batch2 = 35619357;
+
+//int Batch = 35619357;
+int Batch = 10000000;
+int Batch2 = 4000000;
+//int Batch2 = 35619357;
 clock_t sniff(int flag, int sum){
 
 	unsigned char *buffer = (unsigned char *)malloc(4096);
@@ -94,7 +95,7 @@ int main(int argc, char **argv){
 		printf("Socket Error\n");
 		return 1;
 	}
-	const char *opt = "xxx";
+	const char *opt = "ens160";
 	setsockopt(sock_raw, SOL_SOCKET, SO_BINDTODEVICE, opt, strlen(opt));
 	
 	int sum = atoi(argv[1]);
@@ -103,7 +104,7 @@ int main(int argc, char **argv){
 	ret = pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE); 
 	printf("start\n");
 	clock_t ustime = 0;
-	ustime = sniff(0, sum);
+	ustime = sniff(1, sum);
 	printf("Speed up!\n");
 	
 	int i;
