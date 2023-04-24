@@ -8,9 +8,9 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 ## Getting Started Instructions
 
 **Start a small test here**
-**getting start from our virtual machine.**
+**getting start from our virtual machine.** (ssh -oPort=9001 artifact@106.15.170.182  passwd:artifact)
    1. Our test needs:
-      1. Stop the address randomization in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
+      1. Disable the address randomization(ASLR) in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
       2. A kernel module: has been compiled in `ub/zz_lkm/` folder, named `zz_lkm.ko`.
       3. A daemon program: has been comiled in `ub/zz_daemon/` folder, named `zz_daemon`.
       4. A program to be boosted: here we use memory io-microbenchmark, which has been compiled in `apps/io_file/`, named `syscall_read`. In this test, we will test the IOPS of memory read in 1024 bytes batch.
