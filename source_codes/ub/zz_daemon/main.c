@@ -8,7 +8,7 @@
 
 char *sys_path = "/sys/kernel/zz_sys/etx_value";
 
-const unsigned long targets[] = {0x7ffff7fa1abb, 0x7ffff7de6487, 0x7ffff7df274e,  0x7ffff7de5fae, 0x7ffff7fa1437,  0x007ffff7fa76ca, 0x07ffff7ed116a, 0x007ffff7e5232f};
+const unsigned long targets[] = {0x7ffff7fa1abb, 0x7ffff7de6487, 0x7ffff7df274e,  0x7ffff7de4fae, 0x7ffff7fa1437,  0x007ffff7fa76ca, 0x07ffff7ed116a, 0x007ffff7e5232f};
 
 unsigned long records[1024] = {};
 int cnts = 0;

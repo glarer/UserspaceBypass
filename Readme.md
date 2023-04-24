@@ -8,7 +8,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 ## Getting Started Instructions
 
 **Start a small test here**
-**getting start from our virtual machine.** (ssh -oPort=9001 artifact@106.15.170.182  passwd:artifact)
+**getting start from our virtual machine.** 
    1. Our test needs:
       1. Disable the address randomization(ASLR) in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
       2. A kernel module: has been compiled in `ub/zz_lkm/` folder, named `zz_lkm.ko`.
@@ -19,7 +19,10 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
    3. Multi-terminal needed: 
       1. One come to `ub/` and run `./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
       2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
+      3. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
+   ![](success.png)
    4. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
+   5. In our setting, all the syscall's address can be boosted are shown in [Tips](#tips).
 
 ---
 ## Detailed Instructions -> Start from the very beginning.
@@ -150,16 +153,18 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
 
 #### Overall Usage:
-1. Stop the address randomization in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
+1. Disable the address randomization in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
 2. Run the program to be boosted.
-3. Find the potentially syscall address of the program: 
+3. Find the potentially syscall address of the program: (Or just use the pre-hardcode address in `source_codes/ub/zz_daemon/main.c`, if it is changed, please add the new address in `source_codes/ub/zz_daemon/main.c`)
+	* <span id='strace'>***How to find syscall address:*** </span>
    * Use `strace` to find the addresses of syscalls. e.g.:
      * `write` of redis: `sudo strace -ip xxx`, xxx is the pid of redis-server. (Here we need the redis-server is running, i.e., a redis-client program is running to communicate with the redis-server.)
+     * Then find the address of `write` and do step 4.
 4. Modify codes in daemon program: `source_codes/ub/zz_daemon/main.c`
     ```c
 	// add the syscall address in targets[]
     // redis -> write
-	const unsigned long targets[] = {0x07ffff7e4832f};
+	const unsigned long targets[] = {0x7ffff7e5232f};
     ```
 5. Compile the daemon program using `make`.
 6. Insert the kernel module in `ub/zz_lkm` folder: `sudo insmod zz_lkm.ko`  and run the daemon program `sudo ./zz_daemon` in zz_daemon folder.
@@ -169,6 +174,11 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 * Every program needs to be boosted individually: re-insert the kernel module and re-run the daemon program.
 
 To simplify the artifact, we write several scripts to reduce the repetitive workload of client test. Please see `source/scripts/` folder, the usage of them are specified inside the scripts.
+
+### Tips from the beginning:
+All the options with the tag '**(Optional: has been Pre-hardcode)**' can be jump.
+ But if it cannot boost successful, please follow the re-do the experiment from the **(Optional: has been Pre-hardcode)** step **OR** follow the instruction on [how to find syscall address](#strace).
+
 
 ---------
 ## I/O Micro-benchmark test (Paper Section 6.1):
@@ -181,7 +191,7 @@ To simplify the artifact, we write several scripts to reduce the repetitive work
         * `WITH_SUM` parameter is corresponding to Table 3 in the paper.
    4. `make`
    5. `sudo ./syscall_read <IO_SIZE>`, like `sudo ./syscall_read 1024` for 1024 bytes every read. `strace` to get the syscall address, now we support `pread64()` syscall.
-   6. Modify `ub/zz_daemon/main.c` and add syscall address in array `targets[]`. Re-compile the daemon program.
+   6. **(Optional: has been Pre-hardcode)** Modify `ub/zz_daemon/main.c` and add syscall address in array `targets[]`. Re-compile the daemon program.
    7. Insert the kernel module, and run the daemon program.
    8. Run the `syscall_read` program. The boost period will happen in the first read function of the program(we repeat the read function 11 times.), and the 10 times followed will enjoy the boosting.
 3. For **memory** read test:
@@ -195,11 +205,10 @@ To simplify the artifact, we write several scripts to reduce the repetitive work
 ### Redis test (Paper Section 6.2):
 1. Redis version: [6.2.6](https://github.com/redis/redis/archive/refs/tags/6.2.6.tar.gz). Download and compile.
 2. Bind the redis-server to a specific NIC and port in `config.conf` (find `bind` in `config.conf`).
-3. Get the syscall address of redis-server. Here we only support syscall `write` of redis-server.
-4. Add the syscall address in `source_codes/ub/zz_daemon/main.c` and compile the daemon program.
-5. Insert the kernel module then run the daemon program.
-6. Run redis-server in `redis-6.2.6/src`: `./redis-server ../redis-conf`.
-7. Run redis-client. In our environment, we use two servers and a pair of directly connected Mellonax Connectx-3/5 NIC to do the experiment. `./redis-benchmark -h <IP_ADDRESS_OF_REDIS_SERVER> -p <PORT_OF_REDIS_SERVER> -t get -n 1000000 -d 3 --threads 2`. The parameter `-t` specify the method, e.g., `get` or `set`, and `-d` means the data size value.
+3. **(Optional: has been Pre-hardcode)** Get the syscall address of redis-server. Here we only support syscall `write` of redis-server. Add the syscall address in `source_codes/ub/zz_daemon/main.c` and compile the daemon program.
+4. Insert the kernel module then run the daemon program.
+5. Run redis-server in `redis-6.2.6/src`: `./redis-server ../redis-conf`.
+6. Run redis-client. In our environment, we use two servers and a pair of directly connected Mellonax Connectx-3/5 NIC to do the experiment. `./redis-benchmark -h <IP_ADDRESS_OF_REDIS_SERVER> -p <PORT_OF_REDIS_SERVER> -t get -n 1000000 -d 3 --threads 2`. The parameter `-t` specify the method, e.g., `get` or `set`, and `-d` means the data size value.
 
 ##### Tips of redis test:
 1. We verify `-d` from 2^0 to 2^14.
@@ -217,15 +226,16 @@ To simplify the artifact, we write several scripts to reduce the repetitive work
 4. The nginx configuration files are in `source_codes/apps/nginx`, move them to `/etc/` folder. The website files need to be put in `/var/www/html` and they can be accessed from the `8088` port. Using `dd` to make files of a specific size.
 5. Run `sudo nignx` to start nginx daemon program. Test whether it is working by `curl` or `wget`, e.g., `curl http://localhost:8088/4k.html`.
 6. Do the benchmark by using [wrk](https://github.com/wg/wrk) from another machine. `./wrk -t8 -c1024 -d12 <URL_&_FILES>`. Here `-t8 -c1024 -d12` represent 8 threads, 1024 connection, and 12 seconds respectively.
-7. `strace` the nginx-worker thread to find the syscall address. Now we support 5 syscalls acceleration: `openat, setsockopt, writev, sendfile, close`. Add addresses of these 5 syscalls in `source_codes/ub/zz_daemon/main.c`, and recompile the daemon program.
+7. **(Optional: has been Pre-hardcode)** `strace` the nginx-worker thread to find the syscall address. Now we support 5 syscalls acceleration: `openat, setsockopt, writev, sendfile, close`. Add addresses of these 5 syscalls in `source_codes/ub/zz_daemon/main.c`, and recompile the daemon program.
 8. Insert the kernel module first, and then run the daemon program in root mode.
 9. Run wrk from another machine(the same machine is also ok) and wait for the boost complete. The boost period may cost more than 3 minutes depending on the RPS, so the first boost needs a big number of wrk -d parameter.
 10. After the acceleration is complete, stop wrk and continue to use `-d12` for testing.
 
 
 ##### Tips of nginx test:
-1. Some syscalls gaps of nginx may be very large, so modify `syscall_short_th` and ` hot_caller_th` in `source_codes/zz_lkm/stat.c` to capture them. Increasing `syscall_short_th` and reducing `hot_caller_th` can catch syscalls that execute slower and with longer intervals.
+1. Some syscalls gaps of nginx may be very large, so modify `syscall_short_th` and ` hot_caller_th` in `source_codes/ub/zz_lkm/stat.c` to capture them. Increasing `syscall_short_th` and reducing `hot_caller_th` can catch syscalls that execute slower and with longer intervals.
 2. Modify `worker_processes` and `worker_cpu_affinity` in nginx configure files `etc/nginx/nginx.conf` can set nginx worker threads and affinity. (`worker_cpu_affinity` set core affinity in the binary bit map.)
+   1. `worker_cpu_affinity: 0010000000000000`: which means 16 cores in this machine, and bind the only one worker process to core `13`.
 3. After changing the configuration, use `sudo nginx -s reload` to load the new config.
 
 ----
@@ -236,29 +246,33 @@ To simplify the artifact, we write several scripts to reduce the repetitive work
 1. Two machine(client and server) are needed. Codes in `source_codes/apps/socket/udp` folder.
 2. Client uses `send_upd.c` as the sender. Change the 'xxx' of `theirAddr.sin_addr.s_addr = inet_addr("xxx.xxx.xxx.xxx");` in `source_codes/apps/socket/send_udp.c` to one of the server NIC address. Use `gcc send_udp.c -o send_udp -lpthread` to compile the sender. Just use `./send_udp` to run.
 3. Server needs to modify 'xxx' of `const char *opt = "xxx";` in `source_codes/apps/socket/udp/raw_socket_udp.c` to the real name of the chosen NIC. `make` to compile the server. Use `sudo ./sniff <0_OR_1>` to run. 0 or 1 means whether to do the calculation of the incoming packages.
-4. Same as previous, use `strace` to get the syscall address after running these two programs. Here we support server's syscall `recvfrom()`. Then add its address in the daemon program.
+4. **(Optional: has been Pre-hardcode)** Same as previous, use `strace` to get the syscall address after running these two programs. Here we support server's syscall `recvfrom()`. Then add its address in the daemon program.
 5. Insert the kernel module, recompile the daemon program, and run.
 6. Run the sender and receiver program again, waiting for the boost complete.
 7. Here we also modify the receiver to have an 11 times socket read test. The first one is used for boosting period, and the 10 times followed for evaluation.
 
 
-## Tips
+## <span id='tips'>Tips</span>
 
 1. In most situations, turning on **KPTI** will have better performance gain. Newer processors may not be affected by the [Meltdown](https://meltdownattack.com/), so they are not affected by KPTI.
 2. How to turn off KPTI: modify `GRUB_CMDLINE_LINUX_DEFAULT=""` line in `/etc/default/grub`, add `nopti` option inside the double quotation marks. Then update grub and reboot. 
 
-## Supported syscalls:
+### Supported syscalls:
 
-| Application | Syscalls |
-| ----------- | ---------- |
-|  redis  | write |
-| | |
-| nginx | openat |
-|       | setsockopt |
-|       | writev |
-|       | sendfile |
-|       | close |
-|   |   |
-| raw socket | recvfrom |
-|   |   |
-| read file | pread |
+Address are collected in our setting, please double check.
+
+If update `source_codes/ub/zz_daemon/main.c` is needed, please follow the [instruction on how to find syscall address](#strace).
+
+| **Application** | **Syscalls** | **Address** |
+| ----------- | ---------- | ---------- |
+|  **redis**  | write | 0x7ffff7e5232f |
+| | | |
+| **nginx** | openat | 0x7ffff7fa1abb |
+|       | setsockopt | 0x7ffff7df274e |
+|       | writev | 0x7ffff7de6487 |
+|       | sendfile | 0x7ffff7de4fae |
+|       | close | 0x07ffff7fa1437 |
+|   |   | |
+| **raw socket** | recvfrom | 0x7ffff7fa76ca |
+|   |   | |
+| **read memory/file** | pread | 0x7ffff7ed116a|
