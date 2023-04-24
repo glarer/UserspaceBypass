@@ -20,9 +20,9 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
       1. One come to `ub/` and run `./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
       2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
    4. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
-   ![](boosting.png)
+   ![](pics/boosting.png)
    5. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
-	![](success.png)
+	![](pics/success.png)
 	Here we can find the syscall address `0x7ffff7ed116a` has been boosted for 89,499,986 times.
    6. In our setting, all the syscall's address can be boosted are shown in [Tips](#tips).
 
