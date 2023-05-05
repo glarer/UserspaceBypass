@@ -17,7 +17,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
       5. A big file named `test.file` in `/dev/shm`(memory). Here we use `dd` to do it: come to `/dev/shm` and `sudo dd if=/dev/zero of=test.file bs=1M count=2048`
    2. Come to `apps/io_file/` and run `sudo ./syscall_read 1024` to get the IOPS of memory read without acceleration. 
    3. Two terminal needed (`tmux` recommended): 
-      1. One come to `ub/` and run `./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
+      1. One come to `ub/` and run `sudo ./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
       2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
    4. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
    ![](pics/boosting.png)
