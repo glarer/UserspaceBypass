@@ -44,7 +44,11 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 		* *This is the hardware platform we use, not mandatory.*
 3. **Change the kernel version to 5.4.44 and modify it. (Or just replace this three files from the /source_codes/kernel_modify)**
 	1. [Kernel 5.4.44](https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.4.44.tar.gz) can be downloaded here.
-	2. Modify codes in "**linux-5.4.44/arch/x86/entry/common.c**" like this:
+	2. Patch the kernel using patch file in `source_codes/kernel_modify/linux-5.4.44.patch`. 
+      	1. Move the patch file into root directory of linux-5.4.44.
+      	2. `patch -p1 < linux-5.4.44.patch` to patch the kernel.
+   ##### If patch the kernel using patch file, step 3, 4 and 5 can be skipped.
+	3. Modify codes in "**linux-5.4.44/arch/x86/entry/common.c**" like this:
 	```c
 	// Add this two line before do_syscall_64() function:
 	void(*zz_var)(struct pt_regs *, unsigned long ts);
@@ -77,7 +81,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 		syscall_return_slowpath(regs);
 	}
 	```
-	3. Modify codes in "**linux-5.4.44/arch/x86/mm/fault.c**" like this: 
+	4. Modify codes in "**linux-5.4.44/arch/x86/mm/fault.c**" like this: 
 	```c
 	// add in the beginning of no_context()
 	int (*UB_fault_address_space)(unsigned long, struct task_struct *, unsigned long); 
@@ -112,7 +116,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 			}
 		}
 	```
-	4. Modify codes in "**linux-5.4.44/arch/x86/mm/pageattr.c**" after function **set_memory_x()** like this:
+	5. Modify codes in "**linux-5.4.44/arch/x86/mm/pageattr.c**" after function **set_memory_x()** like this:
 	```c
 	int set_memory_x(unsigned long addr, int numpages)
 	{
@@ -124,9 +128,10 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 	// add this line:
 	EXPORT_SYMBOL(set_memory_x);
 	```
-	5. Then compile the kernel.
+	6. Then compile the kernel.
 	 [This](https://phoenixnap.com/kb/build-linux-kernel) is a short tutorial(steps 1-5) about how to compile linux kernel. (Tips: you can use multi-threads to compile the kernel to save time. In step 5: `make -j xx`, 'xx' on behalf of the threads you want for compiling. Or after step 4, use the script in `source_codes/scripts/compile_kernel/` to compile the kernel. The script needs to be moved in `linux-5.4.44/` directory.)
-	6. Modify the grub to start with the new kernel.
+	 A `.config` file in `source_codes/kernel_modify` is our config file when compile the kernel. Just use the default ubuntu 20.04.2 kernel compilation option is OK, this file is for reference only.
+	7. Modify the grub to start with the new kernel.
 	   1. `grep menuentry /boot/grub/grub.cfg` check the option of the new kernel, like this:
 		``` c
 		if [ x"${feature_menuentry_id}" = xy ]; then
@@ -145,7 +150,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 		2. Here we want to use option `menuentry 'Ubuntu, with Linux 5.4.44'`. Modify grub to replace the boot kernel.
 		3. `sudo vim /etc/default/grub` and change the first line to `GRUB_DEFAULT="Advanced options for Ubuntu>Ubuntu, with Linux 5.4.44"`
 		4. `grub-install --version ` to check grub version. `sudo update-grub` or `sudo update-grub2` to update the grub for grub version < 2.0 or grub version >= 2.0.
-	7. After bootup, use `uname -r` command to check whether the kernel version has been changed.
+	8. After bootup, use `uname -r` command to check whether the kernel version has been changed.
    
 <!-- ## Start here to test whether the setting is OK (IO microbenchmark):
 1. **Turn off ASLR.**
