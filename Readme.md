@@ -47,7 +47,7 @@ Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 	2. Patch the kernel using patch file in `source_codes/kernel_modify/linux-5.4.44.patch`. 
       	1. Move the patch file into root directory of linux-5.4.44.
       	2. `patch -p1 < linux-5.4.44.patch` to patch the kernel.
-   ##### If patch the kernel using patch file, step 3, 4 and 5 can be skipped.
+   ##### If patching the kernel using the patch file, the next three steps on modify the kernel can be skipped.
 	3. Modify codes in "**linux-5.4.44/arch/x86/entry/common.c**" like this:
 	```c
 	// Add this two line before do_syscall_64() function:
