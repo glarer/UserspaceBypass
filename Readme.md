@@ -218,12 +218,24 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be bypa
 6. Run redis-client. In our environment, we use two servers and a pair of directly connected Mellonax Connectx-3/5 NIC to do the experiment. `./redis-benchmark -h <IP_ADDRESS_OF_REDIS_SERVER> -p <PORT_OF_REDIS_SERVER> -t get -n 1000000 -d 3 --threads 2`. The parameter `-t` specify the method, e.g., `get` or `set`, and `-d` means the data size value.
 
 ##### Tips of redis test:
-1. We verify `-d` from 2^0 to 2^14.
+1. We verify `-d` from $2^0$ to $2^{14}$.
 2. Every `get` method test should start from a `set` test with a same `-d` parameter.
 3. The boosting period may need 20-30s for redis, so the `-n` parameter needs to be large enough. The acceleration gets better as the benchmark runs longer.
 4. After the boost complete, you can stop the benchmark and start a new benchmark test without boost again.
 5. The redis-server and redis-client can run in the same machine.
 6. Different hardware settings will get different results.
+
+#### F-Stack:
+1. [F-Stack](https://github.com/F-Stack/f-stack/archive/refs/tags/v1.22.zip)
+2. Use the F-Stack official tutorial to install and run.
+3. Bind one NIC to DPDK.
+4. The redis-6.2.6 is in `app` folder, compile and bind it to the DPDK NIC.
+5. Start redis from F-Stack: `sudo redis-server --conf config.ini --proc-type=primary --proc-id=0 app/redis-6.2.6/redis.conf`
+   
+##### Tips of F-Stack:
+1. Multi-NIC are needed for DPDK configuration.
+2. If you use Mellanox NIC and the driver >= mlx4, then DPDK is supported originally. No DPDK NIC binding needed.
+ 
 -----
 
 ### Nginx test (Paper Section 6.3):
@@ -258,6 +270,13 @@ All the options with the tag '**(Optional: has been Pre-hardcode)**' can be bypa
 6. Run the sender and receiver program again, waiting for the boost complete.
 7. Here we also modify the receiver to have an 11 times socket read test. The first one is used for boosting period, and the 10 times followed for evaluation.
 
+
+#### eBPF:
+1. `sudo apt install python3-bpfcc` and `sudo pip install bcc`
+2. Two machine(client and server) are needed. Codes in `source_codes/apps/socket/bpf` folder.
+3. Client uses `send_upd.c` as the sender. Change the 'xxx' of `theirAddr.sin_addr.s_addr = inet_addr("xxx.xxx.xxx.xxx");` in `source_codes/apps/socket/send_udp.c` to one of the server NIC address. Use `gcc send_udp.c -o send_udp -lpthread` to compile the sender. Just use `./send_udp` to run.
+4. Server needs to modify 'xxx' of  `device = "xxx"` in `source_codes/apps/socket/bpf/main.py` to the real name of the chosen NIC.
+5. Just run `sudo python3 wrapper.py`. The script will output every 10 seconds.
 ---
 
 ## <span id='tips'>Tips</span>
