@@ -4,30 +4,9 @@ License: GPL
 
 Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
-----
-## Getting Started Instructions
-
-**Start a small test here**
-**getting start from our virtual machine.** 
-   1. Our test needs:
-      1. Disable the address randomization(ASLR) in `su`(`sudo su`) user. `echo 0 > /proc/sys/kernel/randomize_va_space`
-      2. A kernel module: has been compiled in `ub/zz_lkm/` folder, named `zz_lkm.ko`.
-      3. A daemon program: has been comiled in `ub/zz_daemon/` folder, named `zz_daemon`.
-      4. A program to be boosted: here we use memory io-microbenchmark, which has been compiled in `apps/io_file/`, named `syscall_read`. In this test, we will test the IOPS of memory read in 1024 bytes batch.
-      5. A big file named `test.file` in `/dev/shm`(memory). Here we use `dd` to do it: come to `/dev/shm` and `sudo dd if=/dev/zero of=test.file bs=1M count=2048`
-   2. Come to `apps/io_file/` and run `sudo ./syscall_read 1024` to get the IOPS of memory read without acceleration. 
-   3. Two terminal needed (`tmux` recommended): 
-      1. One come to `ub/` and run `sudo ./start.sh`. This script will help us insert the kernel module `zz_lkm.ko` and start the daemon program `zz_daemon`.
-      2. Then, one terminal come to `apps/io_file/` and re-run the `sudo ./syscall_read 1024`. Here we can find the IOPS has been boosted.
-   4. Daemon program will give some hints in boosting procedure, like this picture: we will boost syscall `pread` in the memory read program, and it's memory address is `0x7ffff7ed116a`.
-   ![](pics/boosting.png)
-   5. After finish the test, just stop the script `start.sh`. Some boosting log can be found in `dmesg`.
-	![](pics/success.png)
-	Here we can find the syscall address `0x7ffff7ed116a` has been boosted for 89,499,986 times.
-   6. In our setting, all the syscall's address can be boosted are shown in [Tips](#tips).
 
 ---
-## Detailed Instructions -> Start from the very beginning.
+## Detailed Instructions
 #### Before Start:
 1. **Software configuration**
 	* Ubuntu [20.04.2](https://old-releases.ubuntu.com/releases/20.04.2/ubuntu-20.04.2-desktop-amd64.iso) with Kernel version 5.4.44
