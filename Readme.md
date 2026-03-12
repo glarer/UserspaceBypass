@@ -2,7 +2,6 @@
 
 License: GPL
 
-Author: [Zhe Zhou](https://www.y-droid.com/zhe/)
 
 
 ---
